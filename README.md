@@ -20,7 +20,7 @@ Requirements
 
 Method 1: Run from source
 1.	Clone the repository:
-   git clone [https://github.com/UpDate0909/ninja-game-test.git]
+   git clone https://github.com/UpDate0909/ninja-game-test.git
    cd ninja-game
 2.	Install the required dependencies:
    pip install pygame
