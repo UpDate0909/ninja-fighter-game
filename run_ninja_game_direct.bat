@@ -1,3 +1,0 @@
-@echo off
-echo Запуск игры напрямую из исходников...
-python run_direct.py 
