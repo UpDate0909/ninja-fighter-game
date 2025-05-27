@@ -20,7 +20,7 @@ Requirements
 
 Method 1: Run from source
 1.	Clone the repository:
-   git clone https://github.com/ваш_аккаунт/ninja-game.git
+   git clone [https://github.com/UpDate0909/ninja-game-test.git]
    cd ninja-game
 2.	Install the required dependencies:
    pip install pygame
@@ -30,7 +30,7 @@ Method 1: Run from source
 
 Method 2: Creating an executable file (Windows only)
 1.	Clone the repository and install the necessary dependencies:
-   git clone https://github.com/ваш_аккаунт/ninja-game.git
+   git clone https://github.com/UpDate0909/ninja-game-test.git
    cd ninja-game
    pip install pygame pyinstaller pillow
 2.	Create an executable file using PyInstaller:
@@ -120,7 +120,7 @@ Ninja Game - это простой 2D-файтинг с локальным мн�
 
 Способ 1: Запуск из исходного кода
 1.	Клонируйте репозиторий:
-   git clone https://github.com/ваш_аккаунт/ninja-game.git
+   git clone https://github.com/UpDate0909/ninja-game-test.git
    cd ninja-game
 2.	Установите необходимые зависимости:
    pip install pygame
@@ -130,7 +130,7 @@ Ninja Game - это простой 2D-файтинг с локальным мн�
 
 Способ 2: Создание исполняемого файла (только для Windows)
 1.	Клонируйте репозиторий и установите необходимые зависимости:
-   git clone https://github.com/ваш_аккаунт/ninja-game.git
+   git clone https://github.com/UpDate0909/ninja-game-test.git
    cd ninja-game
    pip install pygame pyinstaller pillow
 2.	Создайте исполняемый файл с помощью PyInstaller:
