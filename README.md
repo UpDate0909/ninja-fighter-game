@@ -174,7 +174,7 @@ pip install pygame
 cd путь/к/папке
 
 Клонируйте репозиторий:
-git clone <URL_репозитория>
+git clone <https://github.com/UpDate0909/ninja-game-test.git>
 
 Перейдите в папку проекта:
 cd ninja_game
