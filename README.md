@@ -1,199 +1,170 @@
-# Basic Networking Setup for Ninja Game
+# 🥷 Ninja Fighter Game
 
-This document outlines a conceptual plan for implementing online multiplayer in the Ninja Game.
+Увлекательная 2D файтинг-игра с ниндзя, написанная на Python с использованием библиотеки Pygame.
 
-## 1. Recommended Architecture
+## 🎮 Особенности игры
 
-*   **Choice:** Client-Server.
-*   **Justification for a 2-player fighting game:**
-    *   **Authority:** A client-server model provides a clear "source of truth." The server is authoritative over the game state (positions, health, etc.), which helps prevent inconsistencies and makes cheating harder to implement by malicious clients. In a P2P setup, resolving conflicting game states between two peers can be complex (e.g., if both players register a hit simultaneously on their own machines, who is correct?).
-    *   **Simplicity for 2 Players:** While P2P can work for 2 players, client-server is often simpler to manage for initial implementation, especially regarding who makes the final decision on game events.
-    *   **NAT Traversal:** P2P connections often face more significant challenges with Network Address Translation (NAT) traversal, as both peers might be behind routers. In a client-server model (especially with a dedicated server, or if the server player can configure port forwarding), only one side (the server) needs to be directly reachable.
-*   **Server Type (Initial):** Listen Server.
-    *   One of the players will act as the server (host). This is simpler to implement initially than a dedicated server, as it doesn't require separate server infrastructure. The player who starts the game and waits for another player to join would typically be the server.
+- **Два режима игры**: одиночная игра против ИИ и локальный мультиплеер
+- **Динамические анимации**: полноценные спрайт-анимации для всех действий
+- **Система комбо**: цепочки атак для опытных игроков
+- **Специальные способности**: сюрикены, режим берсеркера
+- **Разрушаемые объекты**: ящики и вазы для тактических преимуществ
+- **Система бревен**: уникальная механика прыжков по платформам
+- **Случайные фоны**: каждый бой проходит на новом фоне
+- **Звуковые эффекты**: полное звуковое сопровождение
+- **Таблица лидеров**: отслеживание достижений
 
-## 2. Recommended Protocol
+## 🎯 Управление
 
-*   **Choice:** Start with TCP, consider UDP for optimization later.
-*   **TCP (Transmission Control Protocol):**
-    *   **Pros:**
-        *   **Reliability:** Guarantees that data arrives in order and without loss. This is crucial for critical game events like "attack initiated," "jump started," or "damage taken." If these messages are lost, the game state becomes inconsistent.
-        *   **Connection-Oriented:** Establishes a connection before data transfer, ensuring both ends are ready.
-        *   **Simpler to Start:** Python's `socket` module makes TCP programming relatively straightforward.
-    *   **Cons:**
-        *   **Latency:** The overhead for ensuring reliability (acknowledgments, retransmissions) can introduce more latency than UDP. In a fast-paced fighting game, this could be noticeable.
-        *   **Head-of-Line Blocking:** If a packet is lost, subsequent packets in the stream might be delayed until the lost one is retransmitted, even if the later packets are for more up-to-date game states.
-*   **UDP (User Datagram Protocol):**
-    *   **Pros:**
-        *   **Speed/Low Latency:** Minimal overhead as it's connectionless and doesn't guarantee delivery or order. This is good for sending frequent updates like player positions where a lost packet is less critical than a delayed one (the next packet will have newer position data anyway).
-        *   **No Head-of-Line Blocking:** Packets are independent.
-    *   **Cons:**
-        *   **Unreliability:** Packets can be lost, duplicated, or arrive out of order. This requires implementing a custom reliability layer on top of UDP for critical game messages if UDP is used exclusively.
-        *   **More Complex for Mixed Data:** If you need both reliable and unreliable messages, you either send everything reliably (e.g., over TCP) or implement your own reliability mechanism over UDP for specific message types.
-*   **Starting Point Recommendation:**
-    *   Begin with **TCP**. For a 2-player game where initial simplicity of development is key, TCP's reliability for all game events (inputs, state changes) will reduce the number of synchronization bugs. Once the core game logic is working over TCP, and if latency becomes a noticeable issue, specific parts (like continuous position updates) could be considered for optimization, potentially by adding a UDP channel for them or implementing techniques like input prediction and state reconciliation.
+### Игрок 1 (левый):
+- **A** / **D** - движение влево/вправо
+- **W** - прыжок
+- **S** - блокировка / спрыгивание с бревна (двойное нажатие)
+- **B** - атака мечом
+- **V** - бросок сюрикена
+- **N** - режим берсеркера
+- **W + V** - бросок сюрикена вверх
 
-## 3. Core Data to Synchronize
+### Игрок 2 (правый):
+- **←** / **→** - движение влево/вправо
+- **↑** - прыжок
+- **↓** - блокировка / спрыгивание с бревна (двойное нажатие)
+- **Numpad 2** - атака мечом
+- **Numpad 1** - бросок сюрикена
+- **Numpad 3** - режим берсеркера
+- **↑ + Numpad 1** - бросок сюрикена вверх
 
-The following data needs to be sent between server and client:
+### Общие клавиши:
+- **ESC** - пауза/меню
+- **R** - перезапуск боя (после окончания)
 
-*   **Player Inputs/Actions (Client to Server):**
-    *   Movement commands (left, right, jump).
-    *   Attack initiation.
-    *   (Potentially: specific attack types, blocking).
-*   **Game State (Server to Client(s)):**
-    *   **Player 1 (Server's Player) & Player 2 (Client's Player) Information:**
-        *   Position (x, y coordinates).
-        *   Current action/state (idle, running, jumping, attacking, taking damage, etc.). This is important for animations and game logic.
-        *   Vertical velocity (if jumping).
-        *   `is_attacking` status and `attack_timer` (or just the visual effect of attack).
-        *   Health.
-        *   Facing direction (left/right).
-    *   **Game World State (if applicable):**
-        *   Positions of any projectiles or dynamic objects (not currently in the game, but for future).
-    *   **Game Score/Status:**
-        *   Round winner/loser.
-        *   Game timer.
-        *   Match score.
+## 🚀 Быстрый старт
 
-## 4. Python Libraries/Modules
+### Системные требования
+- Python 3.7+
+- Pygame 2.0+
 
-*   **`socket` module (built-in):**
-    *   This is the standard Python library for low-level network programming. It supports both TCP and UDP. For a first implementation, this is sufficient and provides a good learning experience.
-*   **`asyncio` (built-in, with `socket` or `asyncio.streams`):**
-    *   Can be used for managing multiple connections or non-blocking operations more gracefully, especially on the server side if it were to handle more than one client (though for a listen server with 1 client, it might be overkill initially but good for future scaling).
-*   **Third-party libraries (Consider for later, not first implementation):**
-    *   **Twisted:** A mature, event-driven networking engine. More complex than `socket` but very powerful.
-    *   **PyZMQ:** For message queue patterns, might be an option for more complex communication but likely overkill for this game.
-    *   **Game-specific networking libraries (e.g., PodSixNet - though might be old):** These often provide higher-level abstractions for game networking. Research would be needed for current, well-maintained options if `socket` proves too cumbersome.
+### Установка и запуск
+1. Клонируйте репозиторий:
+```bash
+git clone https://github.com/UpDate0909/ninja-fighter-game.git
+cd ninja-fighter-game
+```
 
-    For a first, simple implementation, **`socket`** is the recommended starting point.
+2. Установите зависимости:
+```bash
+pip install -r requirements.txt
+```
 
-## 5. Basic Data Flow (Client-Server Example with Listen Server)
+3. Запустите игру:
+```bash
+python run_game.py
+```
 
-Let Player 1 be the Server and Player 2 be the Client.
+## 🎨 Кастомизация фонов
 
-**Server (Player 1's machine):**
-1.  **Initialization:**
-    *   Starts its Pygame instance.
-    *   Creates its Ninja object (Player 1).
-    *   Creates a placeholder Ninja object for Player 2.
-    *   Opens a TCP listening socket on a specific IP address and port.
-    *   Waits for Player 2 (Client) to connect.
-2.  **Connection Established:**
-    *   Accepts the client's connection. Now has a dedicated socket for communication with Player 2.
-3.  **Game Loop:**
-    *   **Input:** Processes Player 1's local inputs (keyboard) for movement, jump, attack.
-    *   **Receive from Client:**
-        *   Receives a message (e.g., a string or JSON object) from Player 2 containing Player 2's inputs/actions (e.g., "LEFT", "JUMP", "ATTACK"). This should be non-blocking or handled in a separate thread/async task to avoid freezing the server's game.
-    *   **Update Game State:**
-        *   Updates Player 1's Ninja object based on Player 1's local input.
-        *   Updates Player 2's Ninja object based on the received inputs from Player 2.
-        *   Runs the game logic (physics, collision detection - including hit detection between players, health updates). The server is the authority here.
-    *   **Send to Client:**
-        *   Serializes the relevant game state (positions of both ninjas, health of both, current actions, etc.) into a message (e.g., JSON string).
-        *   Sends this complete game state to Player 2 (Client).
-    *   **Render:** Updates its local Pygame display based on the new game state.
+Игра поддерживает случайные фоны для каждого боя! Чтобы добавить свои фоны:
 
-**Client (Player 2's machine):**
-1.  **Initialization:**
-    *   Starts its Pygame instance.
-    *   Creates its Ninja object (Player 2).
-    *   Creates a placeholder Ninja object for Player 1.
-    *   Gets the server's IP address and port (e.g., entered by the user).
-2.  **Connection:**
-    *   Creates a TCP socket and connects to the server.
-3.  **Game Loop:**
-    *   **Input:** Processes Player 2's local inputs (keyboard).
-    *   **Send to Server:**
-        *   Serializes Player 2's inputs/actions into a message.
-        *   Sends this message to the server.
-    *   **Receive from Server:**
-        *   Receives the authoritative game state message from the server. This should be non-blocking or handled carefully.
-    *   **Update Local State:**
-        *   Deserializes the message.
-        *   Updates its local representations of Player 1's Ninja and Player 2's Ninja (and any other relevant game objects) based *entirely* on the data received from the server. The client's own Ninja object's state is overridden by the server's state for synchronization. (Client-side prediction can be added later to make client's own movements feel more responsive, but the server state is still the truth).
-    *   **Render:** Updates its local Pygame display.
+1. Поместите изображения в папку `ninja_game/assets/fons/`
+2. **Поддерживаемые форматы**: PNG, JPG, JPEG, BMP, TGA
+3. **Рекомендуемый размер**: 800x600 пикселей
+4. **Советы**: Избегайте слишком ярких изображений, которые могут мешать видимости персонажей
 
-**Data Serialization:**
-*   Data like positions, actions, etc., needs to be converted into a byte stream for sending over the network and then parsed back. JSON strings are a common and human-readable way to do this for simple structures. For performance, more compact binary formats could be used later.
+## 📁 Структура проекта
 
-This outline provides a starting point. Actual implementation will involve handling many details like error conditions, disconnections, message formatting, and potentially more advanced synchronization techniques as the game grows.
+```
+ninja-fighter-game/
+├── ninja_game/
+│   └── assets/
+│       ├── fons/          # Фоновые изображения (добавьте свои!)
+│       ├── sounds/        # Звуковые эффекты
+│       └── sprites/       # Спрайты персонажей
+├── src/
+│   ├── components/        # Игровые компоненты
+│   └── main.py           # Основной игровой модуль
+├── run_game.py           # Скрипт запуска
+└── requirements.txt      # Зависимости
+```
+
+## 🎮 Геймплей
+
+### Основы боя
+- **Атака мечом**: базовая атака ближнего боя
+- **Блокирование**: уменьшает получаемый урон на 50%
+- **Сюрикены**: дальняя атака, можно бросать горизонтально или вверх
+- **Режим берсеркера**: увеличивает урон в 2 раза на 3 секунды
+
+### Система бревен
+- Прыгайте на бревна для тактического преимущества
+- Двойное нажатие **S**/**↓** для спрыгивания
+- Используйте высоту для уклонения от атак
+
+### Разрушаемые объекты
+- Уничтожайте ящики и вазы для восстановления здоровья
+- Используйте объекты как щиты от сюрикенов
+
+## 🏆 Режимы игры
+
+1. **Одиночная игра**: сражайтесь против ИИ с тремя уровнями сложности
+2. **Локальный мультиплеер**: играйте вдвоем на одном компьютере
+3. **Настройки**: настройте звук, музыку и сложность ИИ
+4. **Таблица лидеров**: отслеживайте свои победы
+
+## 🔧 Создание исполняемого файла (EXE)
+
+Для создания standalone EXE файла используйте PyInstaller:
+
+1. Установите PyInstaller:
+```bash
+pip install pyinstaller
+```
+
+2. Создайте EXE файл:
+```bash
+pyinstaller --onefile --windowed --add-data "ninja_game;ninja_game" --add-data "src;src" --icon=ninja_game/assets/icon.ico run_game.py
+```
+
+3. Найдите готовый EXE в папке `dist/`
+
+### Альтернативный способ (с папкой):
+```bash
+pyinstaller --windowed --add-data "ninja_game;ninja_game" --add-data "src;src" --icon=ninja_game/assets/icon.ico run_game.py
+```
+
+## 🐛 Устранение неполадок
+
+### Игра не запускается
+- Убедитесь, что установлен Python 3.7+
+- Проверьте установку Pygame: `pip install pygame`
+
+### Нет звука
+- Проверьте настройки звука в игре
+- Убедитесь, что файлы в `ninja_game/assets/sounds/` не повреждены
+
+### Низкая производительность
+- Закройте другие приложения
+- Уменьшите количество фоновых изображений в папке `fons`
+
+## 🤝 Вклад в проект
+
+Мы приветствуем вклад в развитие игры! Вы можете:
+- Добавлять новые фоны в папку `fons`
+- Сообщать об ошибках через Issues
+- Предлагать новые функции
+- Улучшать код через Pull Requests
+
+## 📄 Лицензия
+
+Этот проект распространяется под лицензией MIT. См. файл LICENSE для подробностей.
+
+## 🎯 Планы развития
+
+- [ ] Онлайн мультиплеер
+- [ ] Новые персонажи
+- [ ] Дополнительные способности
+- [ ] Турнирный режим
+- [ ] Редактор уровней
+
 ---
-This markdown file contains the requested research and outline.
-I have covered:
-1.  **Architecture:** Client-Server (Listen Server).
-2.  **Protocol:** Start with TCP, consider UDP later.
-3.  **Core Data:** Player inputs and comprehensive game state.
-4.  **Python Libraries:** `socket` module as the primary choice.
-5.  **Basic Data Flow:** Detailed steps for server and client.
 
-I believe this fulfills all the requirements of the subtask.
-
-
-
-*******************************************************************
-
-
-# 🚀 Ninja Fighter Game
-
-2D-файтинг, посвящённый боевым искусствам ниндзя. Прототип в активной разработке, демонстрирующий ключевые механики файтинга.
-
-## 📋 Содержание
-- [Основные возможности](#основные-возможности)
-- [Требования](#требования)
-- [Установка](#установка)
-- [Как запустить игру](#как-запустить-игру)
-
-## 🥷 Основные возможности
-- 🥷 Два игровых персонажа-ниндзя.
-- 🕹️ Базовые движения: ходьба влево/вправо и прыжки с учётом гравитации.
-- ⚔️ Атака с определённым хитбоксом и системой обнаружения попаданий.
-- ❤️ Полоски здоровья, уменьшающиеся при получении урона.
-- 👥 Локальный мультиплеер для двух игроков на одном устройстве.
-- 🏁 Условие окончания игры и перезапуск матча.
-- 🎨 Визуальная обратная связь:
-  - Анимации бездействия/ходьбы (изменение цвета).
-  - Анимация атаки (изменение цвета и увеличение размера).
-  - Реакция на удар (изменение цвета и прерывание).
-- 🔊 Звуковые эффекты для прыжков, атак, попаданий и окончания игры
-
-## 📋 Требования
-- Python 3.x
-- Библиотека Pygame
-
-## 🛠️ Установка
-Установите Pygame:
-pip install pygame
-
-## Как запустить игру
-Вариант 1: Клонирование репозитория
-Откройте терминал.
-
-Перейдите в нужный каталог:
-cd путь/к/папке
-
-Клонируйте репозиторий:
-git clone <https://github.com/UpDate0909/ninja-game-test.git>
-
-Перейдите в папку проекта:
-cd ninja_game
-
-Запустите игру:
-python src/main.py
-
-Вариант 2: Скачивание ZIP-архива
-Скачайте ZIP-архив со страницы репозитория (кнопка «Code» → «Download ZIP»).
-
-Распакуйте архив.
-
-Перейдите в папку:
-cd путь/к/папке/ninja_game-main
-
-Запустите игру:
-python src/main.py
-
- Общие замечания
-Убедитесь, что Python и Pygame добавлены в PATH.
-
-Главный скрипт: src/main.py.
+**Наслаждайтесь игрой. Да прибудет с Вами сила! 🥷⚔️**
