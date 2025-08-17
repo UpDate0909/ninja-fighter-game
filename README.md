@@ -45,8 +45,10 @@
 - Python==3.13
 - Pygame>=2.6.1
 - Numpy>=2.0.0
+- scipy>=1.11.3
+- pyinstaller>=6.10.0
 
-Для Python 3.13 требуется pygame>=2.6.1 и numpy>=2.0.0.
+
 Если у вас более старый Python (3.11–3.12), можно использовать pygame==2.5.2 и numpy==1.26.0.
 
 ### Установка и запуск
@@ -65,6 +67,7 @@ pip install -r requirements.txt
 ```bash
 python run_game.py
 ```
+
 
 Сборка .exe
 
