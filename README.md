@@ -75,6 +75,7 @@ pip install pyinstaller>=6.10.0
 pyinstaller --onefile --windowed --add-data "ninja_game;ninja_game" --add-data "src;src" --icon=ninja_game/assets/icon.ico run_game.py
 ```
 Готовый файл появится в папке `dist/`
+
 ![Папка с exe](ninja_game/assets/Screenshot0.png)
 
 🎨 Кастомизация фонов
