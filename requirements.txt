@@ -1,4 +1,4 @@
 pygame>=2.6.1
 numpy>=2.0.0
 scipy>=1.11.3 
-pyinstaller>=6.3.0 
+pyinstaller>=6.10.0
